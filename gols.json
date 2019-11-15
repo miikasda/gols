@@ -1,0 +1,9 @@
+{
+  "username":"MyUsername",
+  "password":"MyPassword",
+  "directories":
+    [
+      "/Directory1",
+      "/Directory2"
+    ]
+}
