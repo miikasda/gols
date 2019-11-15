@@ -1,34 +1,27 @@
-"""
-Module that contains the command line app.
-
-Why does this file exist, and why not put this in __main__?
-
-  You might be tempted to import things from __main__ later, but that will cause
-  problems: the code will get executed twice:
-
-  - When you run `python -mgols` python will execute
-    ``__main__.py`` as a script. That means there won't be any
-    ``gols.__main__`` in ``sys.modules``.
-  - When you import __main__ it will get executed again (as a module) because
-    there's no ``gols.__main__`` in ``sys.modules``.
-
-  Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
-"""
-
-
 import os
 import re
 
 import requests
 from bs4 import BeautifulSoup
 
+import json
 
 def main():
-    upload('DIR', 'USERNAME', 'PASSWORD')
+    # Get absolute path of JSON file
+    script_dir = os.path.dirname(__file__)
+    rel_path = "gols.json"
+    abs_json_path = os.path.join(script_dir, rel_path)
 
+    # Get JSON data
+    with open(abs_json_path, 'r') as f:
+        golsdata = json.load(f)
+
+    # Call upload for each directory
+    for directory in golsdata['directories']:
+        upload(directory, golsdata['username'], golsdata['password'])
 
 def upload(directory_fit, username, password):
-    print("Upload function started")
+    print("Uploading...")
 
     WEBHOST = "https://connect.garmin.com"
     REDIRECT = "https://connect.garmin.com/modern/"
@@ -84,7 +77,7 @@ def upload(directory_fit, username, password):
     url_gc_login = 'https://sso.garmin.com/sso/signin'
     req_login = s.get(url_gc_login, params=params, headers=headers)
     if req_login.status_code != 200:
-        print('issue with {}, you can turn on debug for more info'.format(
+        print('issue with {}'.format(
             req_login))
 
     csrf_input = BeautifulSoup(req_login.content.decode(), 'html.parser').find('input', {'name': '_csrf'})
@@ -94,7 +87,7 @@ def upload(directory_fit, username, password):
 
     req_login2 = s.post(url_gc_login, data=data_login, params=params, headers=headers)
     if req_login2.status_code != 200:
-        print('issue with {}, you can turn on debug for more info'.format(
+        print('issue with {}'.format(
             req_login2))
     # extract the ticket from the login response
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
@@ -109,7 +102,7 @@ def upload(directory_fit, username, password):
     params_post_auth = {'ticket': login_ticket}
     req_post_auth = s.get(url_gc_post_auth, params=params_post_auth)
     if req_post_auth.status_code != 200:
-        print('issue with {}, you can turn on debug for more info'.format(
+        print('issue with {}'.format(
             req_post_auth))
     print('Let\'s upload stuff now')
     # login should be done we upload now
@@ -127,7 +120,7 @@ def upload(directory_fit, username, password):
             req5 = s.post(url_upload, files=files)
             if req5.status_code != 201:
                 print(
-                    'issue with {}, you can turn on debug for more info'.format(
+                    'issue with {}'.format(
                         req5))
 
             # fn = req5.json()['detailedImportResult']['fileName']
