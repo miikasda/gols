@@ -25,7 +25,7 @@ python gols/gols.sh
 ```
 
 ## Automatic on Mount
-Automatically running gols.py when watch is mounted requires using *fstab* and *systemd*.
+Automatically running *gols.py* when watch is mounted requires using *fstab* and *systemd*.
 
 ### 1. Get UUID or LABEL data from watch:
 ```
@@ -40,7 +40,7 @@ sudo nano /etc/fstab
 ```
 LABEL="GARMIN"  /media/garmin vfat  auto,nofail,rw,user,uid=1000  0 2
 ```
-Use the UUID or LABEL that *blkid* found.
+Use the UUID or LABEL that `sudo blkid` found.
 
 ### 3. Add systemd service to run Python script after mount:
 
@@ -68,4 +68,4 @@ sudo systemctl start gols.service
 sudo systemctl enable gols.service
 ```
 
-Note: Make sure to update the header in gols.py to match the correct location of Python
+Note: Make sure to update the header in *gols.py* to match the correct location of Python
