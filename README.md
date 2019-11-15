@@ -18,13 +18,13 @@ pip install bs4
   - Add directories to check when script executed by adding each absolute path as a string to the "directories" array.
   
   
-## Manual
+## Manual Upload
 
 ```
 python gols/gols.sh
 ```
 
-## Automatic on Mount
+## Automatic Upload on Mount
 Automatically running *gols.py* when watch is mounted requires using *fstab* and *systemd*.
 
 ### 1. Get UUID or LABEL data from watch:
