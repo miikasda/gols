@@ -120,10 +120,14 @@ def upload(directory_fit, username, password):
                      }
             s.headers.update({'Referer': 'https://connect.garmin.com/modern/import-data', 'NK': 'NT'})
             req5 = s.post(url_upload, files=files)
-            if req5.status_code != 201:
+            # Succesful status code is 201 Created for activity and 202 Accepted for wellness files
+            success_codes = [201, 202]
+            if req5.status_code not in success_codes:
                 print(
                     'issue with {}'.format(
                         req5))
+            else:
+                print("Succesfully uploaded {}".format(filename))
 
             # fn = req5.json()['detailedImportResult']['fileName']
             if 'failures' in req5.json()['detailedImportResult']:
