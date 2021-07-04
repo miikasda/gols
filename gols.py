@@ -23,7 +23,7 @@ def main():
 
     # Call upload for each directory
     for directory in golsdata['directories']:
-        upload(directory, session)
+        upload(directory, session, golsdata['fastSync'])
 
 def login(username, password):
     print("Logging in...")
@@ -112,16 +112,22 @@ def login(username, password):
         print("Login OK")
         return s
 
-def upload(directory_fit, session):
+def upload(directory_fit, session, fastSync):
     print("Uploading...")
 
     # url_upload = 'https://connect.garmin.com/proxy/upload-service-1.1/json/upload/.fit'
     url_upload = 'https://connect.garmin.com/modern/proxy/upload-service/upload/.fit'
     if len(os.listdir(directory_fit)):
-        for filename in [f for f in os.listdir(directory_fit) if os.path.isfile(os.path.join(directory_fit, f))]:
+        # Loop files from newest to oldest for fastSync to work
+        files = [f for f in os.listdir(directory_fit) if os.path.isfile(os.path.join(directory_fit, f))]
+        file_paths = [os.path.join(directory_fit, f) for f in files]
+        file_paths.sort(key=os.path.getctime, reverse=True)
+        for file_path in file_paths:
+            filename = os.path.basename(file_path)
             print('uploading:  {}'.format(filename))
+            
             files = {'data': (filename,
-                              open(os.path.join(directory_fit, filename), 'rb'),
+                              open(file_path, 'rb'),
                               'application/octet-stream')
                      }
             session.headers.update({'Referer': 'https://connect.garmin.com/modern/import-data', 'NK': 'NT'})
@@ -129,9 +135,11 @@ def upload(directory_fit, session):
             # Succesful status code is 201 Created for activity and 202 Accepted for wellness files
             success_codes = [201, 202]
             if req5.status_code not in success_codes:
-                print(
-                    'issue with {}'.format(
-                        req5))
+                print('issue with {}'.format(req5))
+                if req5.status_code == 409 and fastSync:
+                    # Activity / wellness data has been already uploaded, and fastSync is active => Skip rest of the files
+                    print("fastSync active, skipping rest of the files in {}".format(directory_fit))
+                    break
             else:
                 print("Succesfully uploaded {}".format(filename))
 
