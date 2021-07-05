@@ -25,13 +25,14 @@ def main():
     for directory in golsdata['directories']:
         upload(directory, session, golsdata['fastSync'])
 
+    print('\nFinished')
+
 def login(username, password):
     print("Logging in...")
 
     WEBHOST = "https://connect.garmin.com"
     REDIRECT = "https://connect.garmin.com/modern/"
     BASE_URL = "https://connect.garmin.com/signin/"
-    # GAUTH = "http://connect.garmin.com/gauth/hostname"
     SSO = "https://sso.garmin.com/sso"
     CSS = "https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
 
@@ -75,15 +76,13 @@ def login(username, password):
     }
 
     # begin session with headers because, requests client isn't an option, dunno if Icewasel is still banned...
-    print('Login into Garmin connect')
     s = requests.session()
     s.headers.update(headers)
     # we need the cookies and csrf token from the login page before we can post the user/pass
     url_gc_login = 'https://sso.garmin.com/sso/signin'
     req_login = s.get(url_gc_login, params=params, headers=headers)
     if req_login.status_code != 200:
-        print('issue with {}'.format(
-            req_login))
+        print('issue with {}'.format(req_login))
 
     csrf_input = BeautifulSoup(req_login.content.decode(), 'html.parser').find('input', {'name': '_csrf'})
     if not csrf_input or not csrf_input.get('value'):
@@ -92,8 +91,8 @@ def login(username, password):
 
     req_login2 = s.post(url_gc_login, data=data_login, params=params, headers=headers)
     if req_login2.status_code != 200:
-        print('issue with {}'.format(
-            req_login2))
+        print('issue with {}'.format(req_login2))
+
     # extract the ticket from the login response
     pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
     match = pattern.match(req_login2.content.decode())
@@ -113,9 +112,8 @@ def login(username, password):
         return s
 
 def upload(directory_fit, session, fastSync):
-    print("Uploading...")
+    print("\nUploading directory {}".format(directory_fit))
 
-    # url_upload = 'https://connect.garmin.com/proxy/upload-service-1.1/json/upload/.fit'
     url_upload = 'https://connect.garmin.com/modern/proxy/upload-service/upload/.fit'
     if len(os.listdir(directory_fit)):
         # Loop files from newest to oldest for fastSync to work
@@ -124,7 +122,7 @@ def upload(directory_fit, session, fastSync):
         file_paths.sort(key=os.path.getctime, reverse=True)
         for file_path in file_paths:
             filename = os.path.basename(file_path)
-            print('uploading:  {}'.format(filename))
+            print('Uploading:  {}'.format(filename))
             
             files = {'data': (filename,
                               open(file_path, 'rb'),
@@ -135,29 +133,17 @@ def upload(directory_fit, session, fastSync):
             # Succesful status code is 201 Created for activity and 202 Accepted for wellness files
             success_codes = [201, 202]
             if req5.status_code not in success_codes:
-                print('issue with {}'.format(req5))
                 if req5.status_code == 409 and fastSync:
                     # Activity / wellness data has been already uploaded, and fastSync is active => Skip rest of the files
-                    print("fastSync active, skipping rest of the files in {}".format(directory_fit))
+                    print("File already uploaded, and fastSync is active. Skipping rest of the files in directory")
                     break
+                else:
+                    print('issue with {}'.format(req5))
             else:
                 print("Succesfully uploaded {}".format(filename))
-
-            # fn = req5.json()['detailedImportResult']['fileName']
-            if 'failures' in req5.json()['detailedImportResult']:
-                for failure in req5.json()['detailedImportResult']['failures']:
-                    m_failures = failure['messages'][0]['content']
-                    print(m_failures)
-            if 'successes' in req5.json()['detailedImportResult']:
-                for successes in req5.json()['detailedImportResult']['successes']:
-                    m_success = 'https://connect.garmin.com/modern/activity/' + str(
-                        successes['internalId'])
-                    print(m_success)
-
         print('Done uploading')
     else:
         print('No file found in {}'.format(directory_fit))
-    print('Finished')
 
 
 
