@@ -5,7 +5,7 @@ Upload Garmin .FIT data to Garmin Connect
 - This fork supports uploading both activities and wellness (heartbeat, sleep, steps, etc.) data.
 - When using the fastSync option this fork is faster in upload than its parent.
   - fastSync works in most cases, only if some data is not synced you can force to upload all data from device.
-  -  Average synchronization time with fastsync is 6 sec vs xx sec in parent repository.
+  -  Average synchronization time with fastsync is 7 sec vs 75 sec in parent repository.
 - Easy to read program output and easy to verify source code.
 
 
