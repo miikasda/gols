@@ -1,5 +1,5 @@
 # gols
-Upload Garmin .FIT data to Garmin Connect
+Upload / Synchronize data from Garmin watch to Garmin Connect on linux.
 
 ## Why to use this fork?
 - This fork supports uploading both activities and wellness (heartbeat, sleep, steps, etc.) data.
