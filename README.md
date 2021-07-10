@@ -3,9 +3,10 @@ Upload Garmin .FIT data to Garmin Connect
 
 ## Why to use this fork?
 - This fork supports uploading both activities and wellness (heartbeat, sleep, steps, etc.) data.
+- Allows multiple synchronizations when using automatic upload (parent repository requires boot or systemctl reload after every auto sync).
 - When using the fastSync option this fork is faster in upload than its parent.
   - fastSync works in most cases, only if some data is not synced you can force to upload all data from device.
-  -  Average synchronization time with fastsync is 7 sec vs 75 sec in parent repository.
+  - Average synchronization time with fastSync is 7 sec vs 75 sec in parent repository.
 - Easy to read program output and easy to verify source code.
 
 
@@ -48,24 +49,14 @@ python gols.py
 ```
 
 ## Automatic Upload on Mount
-Automatically running *gols.py* when watch is mounted requires using *fstab* and *systemd*.
+Automatically running *gols.py* when watch is mounted with *systemd*. 
 
-### 1. Get UUID or LABEL data from watch:
+### 1. Get watch mount unit:
 ```
-sudo blkid
-```
-
-### 2. Create fstab entry to automatically mount watch to directory when connected:
-```
-sudo nano /etc/fstab
+systemctl list-units -t mount
 ```
 
-```
-LABEL="GARMIN"  /media/garmin vfat  auto,nofail,rw,user,uid=1000  0 2
-```
-Use the UUID or LABEL that `sudo blkid` found.
-
-### 3. Add systemd service to run Python script after mount:
+### 2. Add systemd service to run Python script after mount:
 
 ```
 sudo nano /etc/systemd/system/gols.service
@@ -74,21 +65,32 @@ sudo nano /etc/systemd/system/gols.service
 ```
 [Unit]
 Description=Run gols.py on watch mount
-Requires=media-garmin.mount
-After=media-garmin.mount
+Requires=media-john-GARMIN.mount
+After=media-john-GARMIN.mount
 
 [Service]
-ExecStart=/home/user/gols/gols.py
+ExecStart=/home/john/Documents/gols/gols.py
+User=john
 
 [Install]
-WantedBy=media-garmin.mount
-```
+WantedBy=media-john-GARMIN.mount
 
-### 4. Start systemd service:
 ```
-sudo systemctl daemon-reload
+Use the mount unit found in Step 1 in following fields:
+- `Requires`
+- `After`
+- `WantedBy`
+
+Change the `User=john` to match your username returned by `whoami` and `ExecStart` point to path of *gols.py*.
+
+### 3. Start systemd service:
+```
 sudo systemctl start gols.service
 sudo systemctl enable gols.service
 ```
 
-Note: Make sure to update the header in *gols.py* to match the correct location of Python
+Note: Make sure to update the header in *gols.py* to match the correct location of Python and check that *gols.py* is executable:
+
+```
+chmod +x gols.py
+```
