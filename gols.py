@@ -3,7 +3,7 @@
 import os
 import re
 
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 
 import json
@@ -75,8 +75,8 @@ def login(username, password):
         'embed': 'false'
     }
 
-    # begin session with headers because, requests client isn't an option, dunno if Icewasel is still banned...
-    s = requests.session()
+    # Use cloudscraper to get rid of error 403
+    s = cloudscraper.create_scraper()
     s.headers.update(headers)
     # we need the cookies and csrf token from the login page before we can post the user/pass
     url_gc_login = 'https://sso.garmin.com/sso/signin'
