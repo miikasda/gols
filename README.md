@@ -19,7 +19,7 @@ git clone "https://github.com/miikasda/gols.git"
 
 ### 2. Install dependencies:
 ```
-pip install bs4
+pip install beautifulsoup4 cloudscraper
 ```
 
 ### 3. Edit JSON data:
