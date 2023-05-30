@@ -4,9 +4,13 @@ import os
 import re
 
 import cloudscraper
+from time import sleep
 from bs4 import BeautifulSoup
 
 import json
+
+# Maximum number of login retries.
+MAX_LOGIN_RETRIES = 2
 
 def main():
     # Get absolute path of JSON file
@@ -75,29 +79,37 @@ def login(username, password):
         'embed': 'false'
     }
 
-    # Use cloudscraper to get rid of error 403
-    s = cloudscraper.create_scraper()
-    s.headers.update(headers)
-    # we need the cookies and csrf token from the login page before we can post the user/pass
-    url_gc_login = 'https://sso.garmin.com/sso/signin'
-    req_login = s.get(url_gc_login, params=params, headers=headers)
-    if req_login.status_code != 200:
-        print('issue with {}'.format(req_login))
+    for i in range(MAX_LOGIN_RETRIES + 1):
+        # Use cloudscraper to get rid of error 403
+        s = cloudscraper.create_scraper()
+        s.headers.update(headers)
+        # we need the cookies and csrf token from the login page before we can post the user/pass
+        url_gc_login = 'https://sso.garmin.com/sso/signin'
+        req_login = s.get(url_gc_login, params=params, headers=headers)
+        if req_login.status_code != 200:
+            print('issue with {}'.format(req_login))
 
-    csrf_input = BeautifulSoup(req_login.content.decode(), 'html.parser').find('input', {'name': '_csrf'})
-    if not csrf_input or not csrf_input.get('value'):
-        raise Exception('Unable to get csrf token from login page.')
-    data_login['_csrf'] = csrf_input.get('value')
+        csrf_input = BeautifulSoup(req_login.content.decode(), 'html.parser').find('input', {'name': '_csrf'})
+        if not csrf_input or not csrf_input.get('value'):
+            raise Exception('Unable to get csrf token from login page.')
+        data_login['_csrf'] = csrf_input.get('value')
 
-    req_login2 = s.post(url_gc_login, data=data_login, params=params, headers=headers)
-    if req_login2.status_code != 200:
-        print('issue with {}'.format(req_login2))
+        req_login2 = s.post(url_gc_login, data=data_login, params=params, headers=headers)
+        if req_login2.status_code != 200:
+            print('issue with {}'.format(req_login2))
 
-    # extract the ticket from the login response
-    pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
-    match = pattern.match(req_login2.content.decode())
-    if not match:
-        raise Exception('Did not get a ticket in the login response. Cannot log in. Did you enter the correct username and password?')
+        # extract the ticket from the login response
+        pattern = re.compile(r".*\?ticket=([-\w]+)\";.*", re.MULTILINE | re.DOTALL)
+        match = pattern.match(req_login2.content.decode())
+        if not match:
+            if i < MAX_LOGIN_RETRIES:
+                print("Login failed, retrying...")
+                sleep(1)
+                continue
+            else:
+                # Maximum amount of retries tried, raise exception
+                raise Exception('Did not get a ticket in the login response. Cannot log in. Did you enter the correct username and password?')
+        break # Succesful login
     login_ticket = match.group(1)
     print('login ticket=' + login_ticket)
 
